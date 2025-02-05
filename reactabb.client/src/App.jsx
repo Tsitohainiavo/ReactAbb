@@ -3,7 +3,8 @@ import React from 'react';
 import UtilisateurTable from './components/UtilisateurTable';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './Login.jsx';
-//import Dashboard from './Dashboard';
+import Signup from './Signup.jsx';
+
 function App() {
     return (
         <Router>
@@ -11,7 +12,7 @@ function App() {
                 <Routes>
                     <Route path='/' element={<Login />} />
                     <Route path='/utilisateurtable' element={<UtilisateurTable />} />
-                    {/*<App path='/dashboard' element={<Dashboard />} />*/}
+                    <Route path='/signup' element={<Signup />} />
                 </Routes>
             </div>
         </Router>

@@ -60,7 +60,8 @@ const LoginForm = () => {
                     </div>
                     <button type='submit'>Login</button>
                     <div className='register-link'>
-                        <p>Vous n'avez pas de compte?<a> Creez en un</a></p>
+                        <p>Vous n'avez pas de compte?<a href='/signup' > Creez en un</a>
+                        </p>
                     </div>
                 </form>
             </div>

@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unescaped-entities */
-/* eslint-disable no-unused-vars */
-import React, { useState } from 'react';
+///* eslint-disable no-unused-vars */
+import { useState } from 'react';
 import './LoginForm.css';
 import { FaUser, FaLock } from 'react-icons/fa';
 import axios from 'axios'; // Importer Axios
@@ -12,6 +12,7 @@ const LoginForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault(); // Empêcher le rechargement de la page
 
+
         try {
             // Envoyer les données du formulaire au backend
             const response = await axios.post('https://localhost:7265/api/oracledata/login', {
@@ -21,9 +22,11 @@ const LoginForm = () => {
 
             // Si la connexion est réussie
             if (response.status === 200) {
-                alert(response.data.Message); // Afficher un message de succès
+                //alert("Utilisateur connecté"); // Afficher un message de succès
                 // Rediriger l'utilisateur ou stocker le token JWT ici
-                console.log('Utilisateur connecté:', response.data.Utilisateur);
+                //console.log('Utilisateur connecté:', response.data.Utilisateur);
+                window.location.href = '/utilisateurtable';
+
             }
         } catch (error) {
             // Gérer les erreurs

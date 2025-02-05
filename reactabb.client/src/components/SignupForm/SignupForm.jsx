@@ -6,10 +6,7 @@ import axios from 'axios';
 
 const SignUpForm = () => {
     const [formData, setFormData] = useState({
-        nom: '',
-        prenom: '',
         email: '',
-        telephone: '',
         password: '',
         confirmPassword: ''
     });
@@ -31,16 +28,13 @@ const SignUpForm = () => {
 
         try {
             const response = await axios.post('https://localhost:7265/api/oracledata/register', {
-                Nom: formData.nom,
-                Prenom: formData.prenom,
                 Email: formData.email,
-                Telephone: formData.telephone,
                 Password: formData.password
             });
 
             if (response.status === 200) {
                 alert("Inscription réussie !");
-                window.location.href = '/login';
+                window.location.href = '/';
             }
         } catch (error) {
             if (error.response) {

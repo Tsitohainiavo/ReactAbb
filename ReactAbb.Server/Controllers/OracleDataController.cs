@@ -71,8 +71,8 @@ namespace ReactAbb.Server.Controllers
                         return Unauthorized("Utilisateur non trouvé.");
                     }
 
-                    // Vérifiez le mot de passe (ceci est un exemple basique, utilisez une méthode de hachage sécurisée en production)
-                    if (utilisateur.PASSWORD != loginRequest.Password)
+                    // Vérifiez le mot de passe haché
+                    if (!BCrypt.Net.BCrypt.Verify(loginRequest.Password, utilisateur.PASSWORD))
                     {
                         return Unauthorized("Mot de passe incorrect.");
                     }
@@ -85,6 +85,50 @@ namespace ReactAbb.Server.Controllers
             {
                 return StatusCode(500, ex.Message);
             }
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
+        {
+            try
+            {
+                using IDbConnection connection = new OracleConnection(
+                    _config.GetConnectionString("OracleConnection"));
+                // Vérifiez si l'utilisateur existe déjà
+                var existingUser = await connection.QueryFirstOrDefaultAsync<Utilisateurs>(
+                    "SELECT * FROM UTILISATEURS WHERE EMAIL = :Email",
+                    new { Email = registerRequest.Email });
+
+                if (existingUser != null)
+                {
+                    return BadRequest("Un utilisateur avec cet email existe déjà.");
+                }
+
+                // Hacher le mot de passe
+                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(registerRequest.Password);
+
+                // Insérer le nouvel utilisateur dans la base de données
+                var sql = @"
+                INSERT INTO UTILISATEURS (EMAIL,PASSWORD)
+                VALUES (:Email, :Password)";
+                await connection.ExecuteAsync(sql, new
+                {
+                    Email = registerRequest.Email,
+                    Password = hashedPassword
+                });
+
+                return Ok("Inscription réussie !");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        public class RegisterRequest
+        {
+            public string Email { get; set; }
+            public string Password { get; set; }
         }
 
         public class LoginRequest

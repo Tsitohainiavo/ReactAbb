@@ -6,16 +6,32 @@ function UtilisateurTable() {
     //const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios.get('https://localhost:7265/api/OracleData/utilisateurs')
+        const token = localStorage.getItem('token');
+        axios.get('https://localhost:7265/api/OracleData/utilisateurs', {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
             .then(response => response.data)
             .then(data => {
                 setEmployees(data);
-                //setLoading(false);
+            })
+            .catch(error => {
+                console.error('Erreur lors de la récupération des utilisateurs:', error);
+                window.location.href = '/'; // Rediriger vers la page de connexion en cas d'erreur
             });
     }, []);
 
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        window.location.href = '/';
+    };
+
     return (
         <div>
+            <button onClick={handleLogout} style={{ float: 'right', margin: '10px' }}>
+                Déconnexion
+            </button>
             <table className="table table-striped">
                 <thead>
                     <tr>
@@ -30,7 +46,6 @@ function UtilisateurTable() {
                             <td>{utilisateur.id}</td>
                             <td>{utilisateur.email}</td>
                             <td>{utilisateur.password}</td>
-                            {/*<td>{new Date(utilisateur.hireDate).toLocaleDateString()}</td>*/}
                         </tr>
                     ))}
                 </tbody>

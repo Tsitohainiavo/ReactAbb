@@ -17,6 +17,8 @@ const LoginForm = () => {
                 Password: password,
             });
             if (response.status === 200) {
+                // Stocker le token dans le localStorage
+                localStorage.setItem('token', response.data.token);
                 window.location.href = '/utilisateurtable';
             }
         } catch (error) {

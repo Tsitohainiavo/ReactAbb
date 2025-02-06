@@ -3,6 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using ReactAbb.Server.Models;
 using System.Data;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ReactAbb.Server.Controllers
 {
@@ -17,6 +22,7 @@ namespace ReactAbb.Server.Controllers
             _config = config;
         }
 
+        [Authorize]
         [HttpGet("utilisateurs")]
         public async Task<IActionResult> GetUtilisateurs()
         {
@@ -77,8 +83,31 @@ namespace ReactAbb.Server.Controllers
                         return Unauthorized("Mot de passe incorrect.");
                     }
 
-                    // Retournez une réponse réussie (vous pouvez également retourner un token JWT ici)
-                    return Ok(new { Message = "Connexion réussie", Utilisateur = utilisateur });
+                    // Générer un token JWT
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]); // Récupérer la clé depuis appsettings.json
+                    if (key.Length < 16)
+                    {
+                        throw new ArgumentException("La clé JWT doit avoir au moins 128 bits (16 caractères).");
+                    }
+
+                    var tokenDescriptor = new SecurityTokenDescriptor
+                    {
+                        Subject = new ClaimsIdentity(new Claim[]
+                        {
+                            new Claim(ClaimTypes.Name, utilisateur.EMAIL),
+                            new Claim(ClaimTypes.NameIdentifier, utilisateur.ID.ToString())
+                        }),
+                        Expires = DateTime.UtcNow.AddHours(1),
+                        Issuer = _config["Jwt:Issuer"],
+                        Audience = _config["Jwt:Audience"],
+                        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                    };
+                    var token = tokenHandler.CreateToken(tokenDescriptor);
+                    var tokenString = tokenHandler.WriteToken(token);
+
+                    // Retournez le token JWT
+                    return Ok(new { Token = tokenString, Message = "Connexion réussie", Utilisateur = utilisateur });
                 }
             }
             catch (Exception ex)

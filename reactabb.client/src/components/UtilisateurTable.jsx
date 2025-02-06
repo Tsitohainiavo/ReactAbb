@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function UtilisateurTable() {
-    const [utilisateurs, setEmployees] = useState([]);
+    const [utilisateurs, setUtilisateurs] = useState([]);
     //const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -14,7 +14,7 @@ function UtilisateurTable() {
         })
             .then(response => response.data)
             .then(data => {
-                setEmployees(data);
+                setUtilisateurs(data);
             })
             .catch(error => {
                 console.error('Erreur lors de la récupération des utilisateurs:', error);

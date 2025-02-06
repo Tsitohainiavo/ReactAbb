@@ -8,6 +8,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Cryptography;
+using ReactAbb.Server.Services;
 
 namespace ReactAbb.Server.Controllers
 {
@@ -83,37 +85,76 @@ namespace ReactAbb.Server.Controllers
                         return Unauthorized("Mot de passe incorrect.");
                     }
 
-                    // Générer un token JWT
-                    var tokenHandler = new JwtSecurityTokenHandler();
-                    var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]); // Récupérer la clé depuis appsettings.json
-                    if (key.Length < 16)
-                    {
-                        throw new ArgumentException("La clé JWT doit avoir au moins 128 bits (16 caractères).");
-                    }
+                    // Générer un code OTP à 6 chiffres
+                    var otp = GenerateOtp();
+                    var emailService = new EmailService(_config);
 
-                    var tokenDescriptor = new SecurityTokenDescriptor
-                    {
-                        Subject = new ClaimsIdentity(new Claim[]
-                        {
-                            new Claim(ClaimTypes.Name, utilisateur.EMAIL),
-                            new Claim(ClaimTypes.NameIdentifier, utilisateur.ID.ToString())
-                        }),
-                        Expires = DateTime.UtcNow.AddHours(1),
-                        Issuer = _config["Jwt:Issuer"],
-                        Audience = _config["Jwt:Audience"],
-                        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-                    };
-                    var token = tokenHandler.CreateToken(tokenDescriptor);
-                    var tokenString = tokenHandler.WriteToken(token);
+                    // Envoyer le code OTP par e-mail
+                    emailService.SendEmail(utilisateur.EMAIL, "Code de confirmation", $"Votre code de confirmation est : {otp}");
 
-                    // Retournez le token JWT
-                    return Ok(new { Token = tokenString, Message = "Connexion réussie", Utilisateur = utilisateur });
+                    // Stocker le code OTP temporairement (par exemple, en mémoire ou dans une base de données)
+                    // Ici, nous utilisons un dictionnaire en mémoire pour simplifier
+                    _otpStore[utilisateur.EMAIL] = otp;
+
+                    return Ok(new { Message = "Code de confirmation envoyé par e-mail.", Email = utilisateur.EMAIL });
                 }
             }
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
             }
+        }
+
+        private static string GenerateOtp()
+        {
+            var random = new Random();
+            return random.Next(100000, 999999).ToString(); // Code à 6 chiffres
+        }
+
+        // Dictionnaire pour stocker les codes OTP temporairement
+        private static readonly Dictionary<string, string> _otpStore = new();
+
+        [HttpPost("verify-otp")]
+        public IActionResult VerifyOtp([FromBody] VerifyOtpRequest verifyOtpRequest)
+        {
+            if (!_otpStore.TryGetValue(verifyOtpRequest.Email, out var storedOtp))
+            {
+                return BadRequest("Aucun code OTP trouvé pour cet e-mail.");
+            }
+
+            if (storedOtp != verifyOtpRequest.Otp)
+            {
+                return Unauthorized("Code OTP incorrect.");
+            }
+
+            // Supprimer le code OTP après validation
+            _otpStore.Remove(verifyOtpRequest.Email);
+
+            // Générer un token JWT
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+            new Claim(ClaimTypes.Name, verifyOtpRequest.Email),
+            new Claim(ClaimTypes.NameIdentifier, "ID_UTILISATEUR") // Remplacez par l'ID réel
+                }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                Issuer = _config["Jwt:Issuer"],
+                Audience = _config["Jwt:Audience"],
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+
+            return Ok(new { Token = tokenString, Message = "Connexion réussie." });
+        }
+
+        public class VerifyOtpRequest
+        {
+            public string Email { get; set; }
+            public string Otp { get; set; }
         }
 
         [HttpPost("register")]

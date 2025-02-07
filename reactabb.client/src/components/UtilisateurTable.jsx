@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Importez useNavigate
 
 function UtilisateurTable() {
     const [utilisateurs, setUtilisateurs] = useState([]);
-    //const [loading, setLoading] = useState(true);
+    const navigate = useNavigate(); // Utilisez useNavigate pour la redirection
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -27,10 +28,17 @@ function UtilisateurTable() {
         window.location.href = '/';
     };
 
+    const handleGoToAgences = () => {
+        navigate('/agences'); // Redirige vers la page des agences
+    };
+
     return (
         <div>
             <button onClick={handleLogout} style={{ float: 'right', margin: '10px' }}>
                 Déconnexion
+            </button>
+            <button onClick={handleGoToAgences} style={{ float: 'right', margin: '10px' }}>
+                Voir les agences
             </button>
             <table className="table table-striped">
                 <thead>

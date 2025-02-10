@@ -1,45 +1,89 @@
 /* eslint-disable react/no-unescaped-entities */
-/* eslint-disable no-unused-vars */
-import  { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; // Importez le CSS de Leaflet
 
 const AgenceMap = () => {
     const [agences, setAgences] = useState([]);
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        axios.get('https://localhost:7265/api/Agence', {
-            headers: {
-                Authorization: `Bearer ${token}`
+    // Liste des adresses des agences
+    const adressesAgences = [
+        "Caisse d'Epargne Antananarivo, Madagascar",
+        "Caisse d'Epargne Toamasina, Madagascar",
+        "Caisse d'Epargne Fianarantsoa, Madagascar",
+        // Ajoutez d'autres adresses ici
+    ];
+
+    // Fonction pour récupérer les coordonnées d'une adresse
+    const getCoordinates = async (address) => {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+            );
+            const data = await response.json();
+            if (data.length > 0) {
+                return {
+                    nom: address,
+                    adresse: address,
+                    latitude: parseFloat(data[0].lat),
+                    longitude: parseFloat(data[0].lon),
+                };
             }
-        })
-            .then(response => {
-                setAgences(response.data);
-                initMap(response.data);
-            })
-            .catch(error => {
-                console.error('Erreur lors de la récupération des agences:', error);
-            });
+            return null;
+        } catch (error) {
+            console.error('Erreur lors de la récupération des coordonnées:', error);
+            return null;
+        }
+    };
+
+    // Récupérer les coordonnées de toutes les agences
+    useEffect(() => {
+        const fetchAgences = async () => {
+            const agencesAvecCoordonnees = [];
+            for (const adresse of adressesAgences) {
+                const coordonnees = await getCoordinates(adresse);
+                if (coordonnees) {
+                    agencesAvecCoordonnees.push(coordonnees);
+                }
+            }
+            setAgences(agencesAvecCoordonnees);
+        };
+
+        fetchAgences();
     }, []);
 
-    const initMap = (agences) => {
-        // Créez une carte centrée sur Madagascar
-        const map = L.map('map').setView([-18.766947, 46.869107], 6);
+    // Initialiser la carte une fois que les agences sont chargées
+    useEffect(() => {
+        if (agences.length > 0) {
+            // Créez une carte centrée sur Madagascar
+            const map = L.map('map').setView([-18.766947, 46.869107], 6);
 
-        // Ajoutez une couche de tuiles OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+            // Ajoutez une couche de tuiles OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
 
-        // Ajoutez des marqueurs pour chaque agence
-        agences.forEach(agence => {
-            L.marker([agence.latitude, agence.longitude])
-                .addTo(map)
-                .bindPopup(agence.nom); // Affichez le nom de l'agence dans un popup
-        });
-    };
+            // Ajoutez des marqueurs pour chaque agence
+            agences.forEach(agence => {
+                const marker = L.marker([agence.latitude, agence.longitude]).addTo(map);
+
+                // Créez un popup pour afficher les détails de l'agence
+                const popup = L.popup().setContent(`
+                    <h3>${agence.nom}</h3>
+                    <p>${agence.adresse}</p>
+                `);
+
+                // Gestion des événements de survol
+                marker.on('mouseover', () => {
+                    marker.bindPopup(popup).openPopup(); // Affichez le popup au survol
+                });
+
+                marker.on('mouseout', () => {
+                    marker.closePopup(); // Fermez le popup lorsque le curseur quitte le marqueur
+                });
+            });
+        }
+    }, [agences]); // Dépendance sur `agences`
 
     return (
         <div>

@@ -1,10 +1,11 @@
 /* eslint-disable react/no-unescaped-entities */
-import { useEffect, useState } from 'react';
+import  { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; // Importez le CSS de Leaflet
 
 const AgenceMap = () => {
     const [agences, setAgences] = useState([]);
+    const mapRef = useRef(null); // Référence pour la carte Leaflet
 
     // Liste des adresses des agences
     const adressesAgences = [
@@ -54,7 +55,7 @@ const AgenceMap = () => {
 
     // Initialiser la carte une fois que les agences sont chargées
     useEffect(() => {
-        if (agences.length > 0) {
+        if (agences.length > 0 && !mapRef.current) {
             // Créez une carte centrée sur Madagascar
             const map = L.map('map').setView([-18.766947, 46.869107], 6);
 
@@ -82,7 +83,18 @@ const AgenceMap = () => {
                     marker.closePopup(); // Fermez le popup lorsque le curseur quitte le marqueur
                 });
             });
+
+            // Stockez la référence de la carte
+            mapRef.current = map;
         }
+
+        // Nettoyage lors du démontage du composant
+        return () => {
+            if (mapRef.current) {
+                mapRef.current.remove(); // Détruire la carte
+                mapRef.current = null;
+            }
+        };
     }, [agences]); // Dépendance sur `agences`
 
     return (

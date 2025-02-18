@@ -44,6 +44,7 @@ namespace ReactAbb.Server.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
         [HttpGet("test-connection")]
         public async Task<IActionResult> TestConnection()
         {
@@ -195,6 +196,70 @@ namespace ReactAbb.Server.Controllers
             }
         }
 
+        [HttpPut("utilisateurs/{id}")]
+        public async Task<IActionResult> EditUtilisateur(int id, [FromBody] UtilisateurUpdateRequest updateRequest)
+        {
+            try
+            {
+                using IDbConnection connection = new OracleConnection(
+                    _config.GetConnectionString("OracleConnection"));
+
+                var existingUser = await connection.QueryFirstOrDefaultAsync<Utilisateurs>(
+                    "SELECT * FROM UTILISATEURS WHERE ID = :Id",
+                    new { Id = id });
+
+                if (existingUser == null)
+                {
+                    return NotFound("Utilisateur non trouvé.");
+                }
+
+                var sql = @"
+                UPDATE UTILISATEURS
+                SET EMAIL = :Email
+                WHERE ID = :Id";
+
+                await connection.ExecuteAsync(sql, new
+                {
+                    Email = updateRequest.Email,
+                    Id = id
+                });
+
+                return Ok("Utilisateur mis à jour avec succès !");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpDelete("utilisateurs/{id}")]
+        public async Task<IActionResult> DeleteUtilisateur(int id)
+        {
+            try
+            {
+                using IDbConnection connection = new OracleConnection(
+                    _config.GetConnectionString("OracleConnection"));
+
+                var existingUser = await connection.QueryFirstOrDefaultAsync<Utilisateurs>(
+                    "SELECT * FROM UTILISATEURS WHERE ID = :Id",
+                    new { Id = id });
+
+                if (existingUser == null)
+                {
+                    return NotFound("Utilisateur non trouvé.");
+                }
+
+                var sql = "DELETE FROM UTILISATEURS WHERE ID = :Id";
+                await connection.ExecuteAsync(sql, new { Id = id });
+
+                return Ok("Utilisateur supprimé avec succès !");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
         public class RegisterRequest
         {
             public string Email { get; set; }
@@ -207,5 +272,9 @@ namespace ReactAbb.Server.Controllers
             public string Password { get; set; }
         }
 
+        public class UtilisateurUpdateRequest
+        {
+            public string Email { get; set; }
+        }
     }
 }

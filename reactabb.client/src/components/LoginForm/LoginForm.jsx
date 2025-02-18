@@ -39,7 +39,7 @@ const LoginForm = () => {
             });
             if (response.status === 200) {
                 localStorage.setItem('token', response.data.token);
-                window.location.href = '/utilisateurtable';
+                window.location.href = '/dashboardlayoutbasic';
             }
         } catch (error) {
             if (error.response) {

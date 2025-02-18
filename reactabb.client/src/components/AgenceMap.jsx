@@ -12,6 +12,7 @@ const AgenceMap = () => {
         "Caisse d'Epargne Antananarivo, Madagascar",
         "Caisse d'Epargne Toamasina, Madagascar",
         "Caisse d'Epargne Fianarantsoa, Madagascar",
+        "Caisse d'Epargne Tsaralalana,Antananarivo, Madagascar",
         // Ajoutez d'autres adresses ici
     ];
 
@@ -100,7 +101,7 @@ const AgenceMap = () => {
     return (
         <div>
             <h1>Agences Caisse d'Épargne de Madagascar</h1>
-            <div id="map" style={{ height: '500px', width: '100%' }}></div>
+            <div id="map" style={{ height: '675px', width: '50%' }}></div>
         </div>
     );
 };
